@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>증권사 디지털 / AI / 스테이블코인 주간 뉴스 스크랩</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- ─── 헤더 ─── -->
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="header-brand">
+        <span class="header-badge">WEEKLY</span>
+        <div>
+          <h1 class="header-title">증권사 디지털 / AI / 스테이블코인 주간 뉴스 스크랩</h1>
+          <p class="header-sub">기준일 기준 최근 1주일 내 국내·해외 주요 기사 중 유사 기사 제거 후 핵심 5건 표시</p>
+        </div>
+      </div>
+      <div class="header-controls">
+        <label class="ctrl-label" for="datePicker">기준일</label>
+        <input type="date" id="datePicker" class="date-input">
+        <button id="refreshBtn" class="btn-primary" onclick="fetchNews()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+          조회
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-layout">
+
+    <!-- ─── 왼쪽: 대시보드 ─── -->
+    <section class="dashboard-col">
+
+      <!-- 통계 패널 -->
+      <div class="stats-panel" id="statsPanel">
+        <div class="stat-item">
+          <span class="stat-label">기준일</span>
+          <span class="stat-value" id="statBaseDate">—</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">조회 기간</span>
+          <span class="stat-value" id="statRange">—</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <span class="stat-label">수집 기사</span>
+          <span class="stat-value" id="statRaw">—</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">날짜 필터</span>
+          <span class="stat-value" id="statFiltered">—</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">중복 제거</span>
+          <span class="stat-value" id="statDeduped">—</span>
+        </div>
+        <div class="stat-item accent">
+          <span class="stat-label">최종 선정</span>
+          <span class="stat-value" id="statFinal">—</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <span class="stat-label">국내</span>
+          <span class="stat-value" id="statDomestic">—</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">해외</span>
+          <span class="stat-value" id="statForeign">—</span>
+        </div>
+      </div>
+
+      <!-- 카테고리 필터 -->
+      <div class="filter-bar">
+        <button class="filter-btn active" data-cat="all">전체</button>
+        <button class="filter-btn" data-cat="증권사 디지털혁신/AI">증권사 디지털혁신/AI</button>
+        <button class="filter-btn" data-cat="스테이블코인">스테이블코인</button>
+      </div>
+
+      <!-- 로딩 -->
+      <div class="loading-wrap" id="loadingWrap" style="display:none">
+        <div class="spinner"></div>
+        <p>뉴스를 수집하고 있습니다…</p>
+      </div>
+
+      <!-- 에러 -->
+      <div class="error-wrap" id="errorWrap" style="display:none">
+        <p class="error-msg" id="errorMsg"></p>
+      </div>
+
+      <!-- 주요 5건 -->
+      <div id="topNewsSection" style="display:none">
+        <div class="section-header">
+          <span class="section-badge top5">TOP 5</span>
+          <h2 class="section-title">자동 선정 주요 뉴스</h2>
+        </div>
+        <div class="news-list" id="topNewsList"></div>
+      </div>
+
+      <!-- 전체 기사 (접을 수 있음) -->
+      <div id="allNewsSection" style="display:none">
+        <div class="section-header collapsible" id="allNewsToggle">
+          <span class="section-badge all">ALL</span>
+          <h2 class="section-title">중복 제거 후 전체 기사</h2>
+          <span class="toggle-icon">▾</span>
+        </div>
+        <div class="news-list collapsed" id="allNewsList"></div>
+      </div>
+
+    </section>
+
+    <!-- ─── 오른쪽: 메일 복사 패널 ─── -->
+    <aside class="mail-panel">
+      <div class="mail-panel-header">
+        <h3 class="mail-title">📧 메일 복사 영역</h3>
+        <button class="btn-copy" id="copyBtn" onclick="copyMailText()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          복사
+        </button>
+      </div>
+      <div class="mail-period" id="mailPeriod"></div>
+      <pre class="mail-text" id="mailText">뉴스를 조회하면 메일용 텍스트가 자동 생성됩니다.</pre>
+    </aside>
+
+  </main>
+
+  <!-- 토스트 -->
+  <div class="toast" id="toast"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
